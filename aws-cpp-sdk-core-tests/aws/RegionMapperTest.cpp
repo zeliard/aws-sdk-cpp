@@ -29,5 +29,6 @@ TEST(RegionMapperTest, TestRegionToString)
     ASSERT_STREQ("ap-southeast-1", RegionMapper::GetRegionName(Region::AP_SOUTHEAST_1));
     ASSERT_STREQ("ap-southeast-2", RegionMapper::GetRegionName(Region::AP_SOUTHEAST_2));
     ASSERT_STREQ("ap-northeast-1", RegionMapper::GetRegionName(Region::AP_NORTHEAST_1));
+    ASSERT_STREQ("ap-northeast-2", RegionMapper::GetRegionName(Region::AP_NORTHEAST_2));
     ASSERT_STREQ("sa-east-1", RegionMapper::GetRegionName(Region::SA_EAST_1));
 }
