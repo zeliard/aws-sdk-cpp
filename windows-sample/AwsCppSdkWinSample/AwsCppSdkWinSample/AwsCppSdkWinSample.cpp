@@ -40,6 +40,70 @@ static const char* HASH_KEY_NAME = "HashKey";
 static const char* SIMPLE_TABLE = "TestSimpleTable";
 static const char* ALLOCATION_TAG = "DynamoDbTest";
 
+
+
+class DynamoDbTest
+{
+public:
+	std::shared_ptr<DynamoDBClient> m_client;
+	
+	void PutItemTest()
+	{
+		auto putItemHandler = std::bind(&DynamoDbTest::PutItemOutcomeReceived, this, std::placeholders::_1, std::placeholders::_2,
+			std::placeholders::_3, std::placeholders::_4);
+
+		/// now put 50 items in the table asynchronously
+		Aws::String testValueColumnName = "TestValue";
+		Aws::StringStream ss;
+
+		for (unsigned i = 0; i < 50; ++i)
+		{
+			ss << HASH_KEY_NAME << i;
+			PutItemRequest putItemRequest;
+			putItemRequest.SetTableName(SIMPLE_TABLE);
+			AttributeValue hashKeyAttribute;
+			hashKeyAttribute.SetS(ss.str());
+			ss.str("");
+			putItemRequest.AddItem(HASH_KEY_NAME, hashKeyAttribute);
+			AttributeValue testValueAttribute;
+			ss << testValueColumnName << i;
+			testValueAttribute.SetS(ss.str());
+			putItemRequest.AddItem(testValueColumnName, testValueAttribute);
+			ss.str("");
+			m_client->PutItemAsync(putItemRequest, putItemHandler);
+		}
+
+		/// wait for the callbacks to finish.
+		std::unique_lock<std::mutex> putItemResultLock(putItemResultMutex);
+		putItemResultSemaphore.wait(putItemResultLock);
+	}
+
+	void PutItemOutcomeReceived(const DynamoDBClient* sender, const PutItemRequest& request, const PutItemOutcome& outcome, const std::shared_ptr<const AsyncCallerContext>& context)
+	{
+		AWS_UNREFERENCED_PARAM(sender);
+		AWS_UNREFERENCED_PARAM(request);
+		AWS_UNREFERENCED_PARAM(context);
+
+		std::lock_guard<std::mutex> locker(putItemResultMutex);
+		putItemResultsFromCallbackTest.push_back(outcome);
+
+		if (putItemResultsFromCallbackTest.size() == 50)
+		{
+			putItemResultSemaphore.notify_all();
+		}
+	}
+
+private:
+
+	
+
+	std::mutex putItemResultMutex;
+	std::condition_variable putItemResultSemaphore;
+
+	Aws::Vector<PutItemOutcome> putItemResultsFromCallbackTest;
+};
+
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	LockFreeMemorySystem memorySystem;
@@ -60,6 +124,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		config.region = Region::AP_NORTHEAST_2;
 		config.executor = executor;
 		auto dynamoDbClient = Aws::MakeShared<DynamoDBClient>(ALLOCATION_TAG, config);
+
+		
 
 		/// Create a table and verify it's output
 		{
@@ -113,37 +179,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		/// Put items
 		{
-			AttributeValue homer;
-			homer.SetS("Homer");
+			DynamoDbTest putTest;
+			putTest.m_client = dynamoDbClient;
 
-			AttributeValue bart;
-			bart.SetS("Bart");
+			putTest.PutItemTest();
 
-			AttributeValue hashKeyAttribute;
 
-			PutItemRequest putRequest;
-			putRequest.SetTableName(SIMPLE_TABLE);
-			hashKeyAttribute.SetS("TestItem1");
-			putRequest.AddItem(HASH_KEY_NAME, hashKeyAttribute);
-			putRequest.AddItem("Simpson", homer);
-			PutItemOutcome result1 = dynamoDbClient->PutItem(putRequest);
-
-			if (result1.IsSuccess())
-			{
-				printf("[OK] Put Item 1\n");
-			}
-
-			PutItemRequest putRequest2;
-			putRequest2.SetTableName(SIMPLE_TABLE);
-			hashKeyAttribute.SetS("TestItem2");
-			putRequest2.AddItem(HASH_KEY_NAME, hashKeyAttribute);
-			putRequest2.AddItem("Simpson", bart);
-			PutItemOutcome result2 = dynamoDbClient->PutItem(putRequest2);
-
-			if (result2.IsSuccess())
-			{
-				printf("[OK] Put Item 2\n");
-			}
 		}
 
 		/// Delete a table
