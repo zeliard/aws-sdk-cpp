@@ -27,6 +27,7 @@
 #include <aws/dynamodb/model/DeleteItemRequest.h>
 
 #include "LockFreeMemorySystem.h"
+#include "LockFreeExecutor.h"
 
 using namespace Aws;
 using namespace Aws::Auth;
@@ -47,6 +48,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	/// DynamoDB Test Sample
 	{
 		auto limiter = Aws::MakeShared<Aws::Utils::RateLimits::DefaultRateLimiter<>>(ALLOCATION_TAG, 200000);
+		auto executor = Aws::MakeShared<LockFreeExecutor>(ALLOCATION_TAG);
 
 		ClientConfiguration config;
 		config.scheme = Scheme::HTTPS;
@@ -56,7 +58,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		config.writeRateLimiter = limiter;
 		config.httpLibOverride = Aws::Http::TransferLibType::WIN_HTTP_CLIENT;
 		config.region = Region::AP_NORTHEAST_2;
-
+		config.executor = executor;
 		auto dynamoDbClient = Aws::MakeShared<DynamoDBClient>(ALLOCATION_TAG, config);
 
 		/// Create a table and verify it's output

@@ -23,6 +23,12 @@
     <ClInclude Include="LockFreeMemorySystem.h">
       <Filter>Custom</Filter>
     </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>Custom</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeExecutor.h">
+      <Filter>Custom</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -32,6 +38,9 @@
       <Filter>Main</Filter>
     </ClCompile>
     <ClCompile Include="LockFreeMemorySystem.cpp">
+      <Filter>Custom</Filter>
+    </ClCompile>
+    <ClCompile Include="LockFreeExecutor.cpp">
       <Filter>Custom</Filter>
     </ClCompile>
   </ItemGroup>
